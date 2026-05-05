@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PM Software Communication Evaluation — Teona Antova</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ══ RESET & BASE ══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #0d0f14;
+  --surface:   #13161e;
+  --surface2:  #1b1f2b;
+  --surface3:  #22273a;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.13);
+  --text:      #e8eaf0;
+  --muted:     #7a7f96;
+  --muted2:    #555a72;
+  --accent:    #4f8ef7;
+  --accent2:   #7b5ef8;
+  --green:     #34c77b;
+  --amber:     #f0a030;
+  --red:       #e05555;
+  --cu:        #4f8ef7;
+  --as:        #34c77b;
+  --op:        #7b5ef8;
+  --tr:        #f0a030;
+  --font-head: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --r:         10px;
+  --r2:        16px;
+  --sh:        0 2px 20px rgba(0,0,0,.45);
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ══ SCROLLBAR ══════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+/* ══ LAYOUT ═════════════════════════════════════════════════════════════════ */
+.layout { display: flex; min-height: 100vh; }
+
+/* ══ SIDEBAR ════════════════════════════════════════════════════════════════ */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.logo-tag {
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .4rem;
+}
+.logo-title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.35;
+}
+.logo-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: .4rem;
+  line-height: 1.4;
+}
+.sidebar-nav { padding: .75rem .75rem; flex: 1; }
+.nav-group-label {
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted2);
+  padding: .5rem .5rem .3rem;
+  margin-top: .5rem;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: .5rem .75rem;
+  border-radius: var(--r);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  transition: background .15s, color .15s;
+  margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--surface3); color: var(--text); font-weight: 500; }
+.nav-icon {
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.tool-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sidebar-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted2);
+  line-height: 1.5;
+}
+
+/* ══ MAIN CONTENT ═══════════════════════════════════════════════════════════ */
+.main { margin-left: 240px; flex: 1; min-height: 100vh; }
+.page { display: none; padding: 2rem 2.25rem 3rem; max-width: 960px; }
+.page.active { display: block; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ══ PAGE HEADER ════════════════════════════════════════════════════════════ */
+.page-header { margin-bottom: 1.75rem; }
+.page-eyebrow {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: .4rem;
+}
+.page-title {
+  font-family: var(--font-head);
+  font-size: 28px;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: .5rem;
+}
+.page-desc { font-size: 13px; color: var(--muted); max-width: 600px; line-height: 1.65; }
+
+/* ══ CARDS ══════════════════════════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.card-label {
+  font-size: 11px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .6rem;
+}
+.card-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: .5rem; }
+
+/* ══ METRIC GRID ════════════════════════════════════════════════════════════ */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 1rem 1.25rem;
+}
+.metric-label { font-size: 11px; color: var(--muted); margin-bottom: .3rem; }
+.metric-value { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+.metric-sub { font-size: 11px; color: var(--muted2); margin-top: .3rem; }
+
+/* ══ TOOL CARDS ═════════════════════════════════════════════════════════════ */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 1.1rem 1.25rem;
+  transition: border-color .2s, transform .15s;
+  cursor: default;
+}
+.tool-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.tool-card.winner { border-color: var(--accent); }
+.tool-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: .6rem; }
+.tool-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tool-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.tool-badge {
+  margin-left: auto; font-size: 10px; padding: 2px 8px;
+  border-radius: 20px; font-weight: 500;
+}
+.tool-score { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: .25rem; }
+.tool-score span { font-size: 13px; font-weight: 400; color: var(--muted); }
+.tool-desc { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+/* ══ SCORE BARS ═════════════════════════════════════════════════════════════ */
+.score-section { margin-bottom: 1rem; }
+.score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.score-crit { font-size: 12px; color: var(--muted); width: 170px; flex-shrink: 0; }
+.bar-wrap { flex: 1; height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+.score-val { font-size: 12px; font-weight: 500; color: var(--text); width: 30px; text-align: right; }
+
+/* ══ FEATURE MATRIX ═════════════════════════════════════════════════════════ */
+.matrix-wrap { overflow-x: auto; border-radius: var(--r2); border: 1px solid var(--border); }
+.matrix-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px; min-width: 600px;
+}
+.matrix-table th {
+  background: var(--surface2);
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-align: left;
+  padding: .6rem .9rem;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: .03em;
+}
+.matrix-table td {
+  padding: .55rem .9rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+}
+.matrix-table tr:last-child td { border-bottom: none; }
+.matrix-table tr:hover td { background: var(--surface2); }
+.badge {
+  display: inline-block; font-size: 10px; font-weight: 500;
+  padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+}
+.badge-yes  { background: rgba(52,199,123,.15); color: #34c77b; }
+.badge-no   { background: rgba(224,85,85,.13);  color: #e05555; }
+.badge-part { background: rgba(240,160,48,.13); color: #f0a030; }
+
+/* ══ SCENARIO ════════════════════════════════════════════════════════════════ */
+.scenario-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.scen-btn {
+  font-size: 12px; font-family: var(--font-body);
+  padding: .4rem .85rem; border-radius: var(--r);
+  border: 1px solid var(--border2); background: var(--surface);
+  color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.scen-btn:hover { border-color: var(--accent); color: var(--text); }
+.scen-btn.active { border-color: var(--accent); background: rgba(79,142,247,.12); color: var(--accent); }
+.scenario-result { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.scen-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 1rem 1.1rem;
+}
+.scen-card-head { display: flex; align-items: center; gap: 7px; margin-bottom: .5rem; }
+.scen-card-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.scen-body { font-size: 12px; color: var(--muted); line-height: 1.65; }
+
+/* ══ RACI TABLE ═════════════════════════════════════════════════════════════ */
+.raci-wrap { overflow-x: auto; border-radius: var(--r2); border: 1px solid var(--border); margin-top: 1.5rem; }
+.raci-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+.raci-table th {
+  background: var(--surface2); color: var(--muted);
+  font-weight: 500; font-size: 11px;
+  padding: .55rem .8rem; border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.raci-table th:first-child { text-align: left; }
+.raci-table td {
+  padding: .5rem .8rem; border-bottom: 1px solid var(--border);
+  color: var(--muted); text-align: center;
+}
+.raci-table td:first-child { text-align: left; }
+.raci-table tr:last-child td { border-bottom: none; }
+.raci-table tr:hover td { background: var(--surface2); }
+.raci-r { background: rgba(52,199,123,.15); color: #34c77b; }
+.raci-a { background: rgba(79,142,247,.15); color: #4f8ef7; }
+.raci-c { background: rgba(123,94,248,.15); color: #7b5ef8; }
+.raci-i { background: rgba(122,127,150,.15); color: #9fa3b5; }
+.raci-pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; }
+
+/* ══ RECOMMENDATION ══════════════════════════════════════════════════════════ */
+.winner-card {
+  border: 1.5px solid var(--accent);
+  background: linear-gradient(135deg, rgba(79,142,247,.07) 0%, var(--surface) 60%);
+  border-radius: var(--r2);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.winner-card::before {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(79,142,247,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.winner-label {
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: .5rem;
+}
+.winner-name {
+  font-family: var(--font-head); font-size: 32px;
+  color: var(--text); margin-bottom: .35rem;
+}
+.winner-score { font-size: 14px; color: var(--muted); margin-bottom: .75rem; }
+.winner-body { font-size: 13px; color: var(--muted); line-height: 1.7; max-width: 560px; }
+
+.fit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px; margin-bottom: 1.5rem;
+}
+.fit-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 1rem 1.1rem;
+}
+.fit-card.featured { border-color: var(--accent); }
+.fit-rank { font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted2); margin-bottom: .35rem; }
+.fit-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: .3rem; }
+.fit-desc { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+.insights-list { list-style: none; }
+.insights-list li {
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--muted); line-height: 1.6;
+  display: flex; gap: .6rem;
+}
+.insights-list li:last-child { border-bottom: none; }
+.ins-arrow { color: var(--muted2); flex-shrink: 0; margin-top: 1px; }
+
+/* ══ CHART LEGEND ════════════════════════════════════════════════════════════ */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  font-size: 12px; color: var(--muted);
+  margin-bottom: .85rem;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot2 { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ══ SECTION DIVIDER ═════════════════════════════════════════════════════════ */
+.section-label {
+  font-size: 10px; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--muted2); margin: 1.5rem 0 .75rem;
+}
+
+/* ══ FILTER ROW ══════════════════════════════════════════════════════════════ */
+.filter-row {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; margin-bottom: 1.25rem;
+}
+.filter-row label { font-size: 12px; color: var(--muted); }
+.filter-row select {
+  font-size: 12px; font-family: var(--font-body);
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border2); border-radius: var(--r);
+  padding: .35rem .7rem; cursor: pointer; outline: none;
+}
+.filter-row select:focus { border-color: var(--accent); }
+
+/* ══ MOBILE TOGGLE ════════════════════════════════════════════════════════════ */
+.mob-toggle {
+  display: none;
+  position: fixed; top: 14px; left: 14px; z-index: 200;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); width: 36px; height: 36px;
+  border-radius: var(--r); cursor: pointer; font-size: 18px;
+  align-items: center; justify-content: center;
+}
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  .sidebar { transform: translateX(-100%); transition: transform .25s; }
+  .sidebar.open { transform: none; }
+  .main { margin-left: 0; }
+  .mob-toggle { display: flex; }
+  .page { padding: 1rem 1rem 3rem; padding-top: 3.5rem; }
+  .scenario-result { grid-template-columns: 1fr; }
+  .fit-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .fit-grid { grid-template-columns: 1fr; }
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<button class="mob-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+
+<div class="layout">
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-tag">Capstone Project · 2026</div>
+    <div class="logo-title">PM Software<br>Communication Eval.</div>
+    <div class="logo-sub">Teona Antova · ID 5768<br>SCSIT – UAC Skopje</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">Dashboard</div>
+    <button class="nav-item active" onclick="showPage('overview',this)">
+      <span class="nav-icon">◈</span> Overview
+    </button>
+    <button class="nav-item" onclick="showPage('scores',this)">
+      <span class="nav-icon">▦</span> Detailed Scores
+    </button>
+    <button class="nav-item" onclick="showPage('matrix',this)">
+      <span class="nav-icon">⊞</span> Feature Matrix
+    </button>
+    <div class="nav-group-label">Analysis</div>
+    <button class="nav-item" onclick="showPage('scenario',this)">
+      <span class="nav-icon">◎</span> Scenario Sim.
+    </button>
+    <button class="nav-item" onclick="showPage('recommendation',this)">
+      <span class="nav-icon">✦</span> Recommendation
+    </button>
+    <div class="nav-group-label">Tools</div>
+    <button class="nav-item" onclick="showPage('clickup',this)">
+      <span class="tool-dot-sm" style="background:var(--cu)"></span> ClickUp
+    </button>
+    <button class="nav-item" onclick="showPage('asana',this)">
+      <span class="tool-dot-sm" style="background:var(--as)"></span> Asana
+    </button>
+    <button class="nav-item" onclick="showPage('openproject',this)">
+      <span class="tool-dot-sm" style="background:var(--op)"></span> OpenProject
+    </button>
+    <button class="nav-item" onclick="showPage('trello',this)">
+      <span class="tool-dot-sm" style="background:var(--tr)"></span> Trello
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    Supervisors: Prof. Lazov &amp; Prof. Radevski<br>
+    Co-mentor: Prof. Stanojeska
+  </div>
+</aside>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════════════════════ -->
+<main class="main">
+
+<!-- ──────────────────── OVERVIEW ──────────────────── -->
+<div id="page-overview" class="page active">
+  <div class="page-header">
+    <div class="page-eyebrow">Capstone Project · Business / Project Management</div>
+    <div class="page-title">Evaluation of PM Software<br>for Effective Team Communication</div>
+    <div class="page-desc">A comparative study of four open-source project management platforms assessed across eight communication dimensions relevant to IT project teams.</div>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric">
+      <div class="metric-label">Tools evaluated</div>
+      <div class="metric-value">4</div>
+      <div class="metric-sub">Open-source platforms</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Criteria assessed</div>
+      <div class="metric-value">8</div>
+      <div class="metric-sub">Communication dimensions</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Top score</div>
+      <div class="metric-value" style="color:var(--cu)">86</div>
+      <div class="metric-sub">ClickUp · out of 100</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Failed projects</div>
+      <div class="metric-value">56%</div>
+      <div class="metric-sub">Cite poor communication</div>
+    </div>
+  </div>
+
+  <div class="tool-grid">
+    <div class="tool-card winner">
+      <div class="tool-card-top">
+        <span class="tool-dot" style="background:var(--cu)"></span>
+        <span class="tool-name">ClickUp</span>
+        <span class="tool-badge" style="background:rgba(79,142,247,.15);color:var(--cu)">Top pick</span>
+      </div>
+      <div class="tool-score">86 <span>/ 100</span></div>
+      <div class="tool-desc">All-in-one platform with built-in chat, threaded comments, real-time notifications, and granular stakeholder permissions.</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-card-top">
+        <span class="tool-dot" style="background:var(--as)"></span>
+        <span class="tool-name">Asana</span>
+        <span class="tool-badge" style="background:rgba(52,199,123,.12);color:var(--as)">2nd</span>
+      </div>
+      <div class="tool-score">79 <span>/ 100</span></div>
+      <div class="tool-desc">Strong task-level communication and stakeholder visibility. Lacks native chat — relies on integrations for real-time messaging.</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-card-top">
+        <span class="tool-dot" style="background:var(--op)"></span>
+        <span class="tool-name">OpenProject</span>
+        <span class="tool-badge" style="background:rgba(123,94,248,.12);color:var(--op)">3rd</span>
+      </div>
+      <div class="tool-score">71 <span>/ 100</span></div>
+      <div class="tool-desc">Solid structured communication with forums and wiki. Best for formal, document-heavy projects.</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-card-top">
+        <span class="tool-dot" style="background:var(--tr)"></span>
+        <span class="tool-name">Trello</span>
+        <span class="tool-badge" style="background:rgba(240,160,48,.12);color:var(--tr)">4th</span>
+      </div>
+      <div class="tool-score">62 <span>/ 100</span></div>
+      <div class="tool-desc">Simple and visual but communication features are basic. Real-time chat requires paid Power-Ups.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Radar — all criteria comparison</div>
+  <div class="card">
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--cu)"></span>ClickUp</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--as)"></span>Asana</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--op)"></span>OpenProject</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--tr)"></span>Trello</div>
+    </div>
+    <div style="position:relative;width:100%;height:320px">
+      <canvas id="radarChart" role="img" aria-label="Radar chart comparing all four tools across 8 communication criteria. ClickUp leads in most areas.">ClickUp scores highest overall, especially in real-time messaging and notifications.</canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────────── DETAILED SCORES ──────────────────── -->
+<div id="page-scores" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Analysis</div>
+    <div class="page-title">Detailed Scores</div>
+    <div class="page-desc">Per-criterion scores for each tool across all 8 communication dimensions. Use the filters to focus your view.</div>
+  </div>
+
+  <div class="filter-row">
+    <label>Tool:</label>
+    <select id="toolFilter" onchange="renderScores()">
+      <option value="all">All tools</option>
+      <option value="ClickUp">ClickUp</option>
+      <option value="Asana">Asana</option>
+      <option value="OpenProject">OpenProject</option>
+      <option value="Trello">Trello</option>
+    </select>
+    <label>Sort:</label>
+    <select id="sortFilter" onchange="renderScores()">
+      <option value="default">Default</option>
+      <option value="asc">Score ↑</option>
+      <option value="desc">Score ↓</option>
+    </select>
+  </div>
+
+  <div id="scoresContainer"></div>
+
+  <div class="section-label">Overall comparison bar</div>
+  <div class="card">
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--cu)"></span>ClickUp</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--as)"></span>Asana</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--op)"></span>OpenProject</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--tr)"></span>Trello</div>
+    </div>
+    <div style="position:relative;width:100%;height:200px">
+      <canvas id="barChart" role="img" aria-label="Horizontal bar chart showing overall scores: ClickUp 86, Asana 79, OpenProject 71, Trello 62.">ClickUp 86, Asana 79, OpenProject 71, Trello 62.</canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────────── FEATURE MATRIX ──────────────────── -->
+<div id="page-matrix" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Analysis</div>
+    <div class="page-title">Feature Matrix</div>
+    <div class="page-desc">Native availability of 12 key communication features across all four platforms.</div>
+  </div>
+
+  <div class="matrix-wrap">
+    <table class="matrix-table" id="matrixTable">
+      <thead>
+        <tr>
+          <th style="width:210px">Feature</th>
+          <th>ClickUp</th><th>Asana</th><th>OpenProject</th><th>Trello</th>
+        </tr>
+      </thead>
+      <tbody id="matrixBody"></tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:14px;margin-top:.9rem;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--muted)">Legend:</span>
+    <span class="badge badge-yes">Yes</span><span style="font-size:12px;color:var(--muted)">Native</span>
+    <span class="badge badge-part">Partial</span><span style="font-size:12px;color:var(--muted)">Via integration / limited</span>
+    <span class="badge badge-no">No</span><span style="font-size:12px;color:var(--muted)">Not available</span>
+  </div>
+
+  <div class="section-label">Key findings</div>
+  <ul class="insights-list">
+    <li><span class="ins-arrow">→</span>ClickUp is the only tool with fully native real-time chat — no integration required.</li>
+    <li><span class="ins-arrow">→</span>Asana and OpenProject offer the strongest stakeholder role management, critical for IT projects with external clients.</li>
+    <li><span class="ins-arrow">→</span>Trello's communication capabilities are largely gated behind paid Power-Ups.</li>
+    <li><span class="ins-arrow">→</span>All four tools support @mentions and task comments, but only ClickUp and Asana allow threaded replies.</li>
+    <li><span class="ins-arrow">→</span>OpenProject stands out for wiki and forum-based documentation, supporting async communication at scale.</li>
+  </ul>
+</div>
+
+<!-- ──────────────────── SCENARIO SIMULATION ──────────────────── -->
+<div id="page-scenario" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Simulation</div>
+    <div class="page-title">Scenario Simulation</div>
+    <div class="page-desc">IT System Migration project — 9 members, 12 weeks, 2 external stakeholders. See how each tool handles real communication events.</div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.25rem">
+    <div class="card-label">Project scenario parameters</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">
+      <div style="background:var(--surface2);border-radius:var(--r);padding:.65rem .9rem">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.2rem">Team size</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text)">9</div>
+        <div style="font-size:11px;color:var(--muted2)">members</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--r);padding:.65rem .9rem">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.2rem">Duration</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text)">12</div>
+        <div style="font-size:11px;color:var(--muted2)">weeks</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--r);padding:.65rem .9rem">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.2rem">Stakeholders</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text)">2</div>
+        <div style="font-size:11px;color:var(--muted2)">external</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--r);padding:.65rem .9rem">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.2rem">Tasks</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text)">48</div>
+        <div style="font-size:11px;color:var(--muted2)">tracked</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Communication event — select one</div>
+  <div class="scenario-btns" id="scenarioBtns"></div>
+  <div class="scenario-result" id="scenarioResult"></div>
+
+  <div class="section-label">RACI responsibility matrix</div>
+  <div class="raci-wrap">
+    <table class="raci-table" id="raciTable">
+      <thead><tr id="raciHead"></tr></thead>
+      <tbody id="raciBody"></tbody>
+    </table>
+  </div>
+  <div style="display:flex;gap:14px;margin-top:.75rem;flex-wrap:wrap">
+    <span class="raci-pill raci-r" style="font-size:11px;padding:2px 9px">R</span><span style="font-size:12px;color:var(--muted)">Responsible</span>
+    <span class="raci-pill raci-a" style="font-size:11px;padding:2px 9px">A</span><span style="font-size:12px;color:var(--muted)">Accountable</span>
+    <span class="raci-pill raci-c" style="font-size:11px;padding:2px 9px">C</span><span style="font-size:12px;color:var(--muted)">Consulted</span>
+    <span class="raci-pill raci-i" style="font-size:11px;padding:2px 9px">I</span><span style="font-size:12px;color:var(--muted)">Informed</span>
+  </div>
+</div>
+
+<!-- ──────────────────── RECOMMENDATION ──────────────────── -->
+<div id="page-recommendation" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Conclusion</div>
+    <div class="page-title">Recommendation</div>
+    <div class="page-desc">Based on the comparative analysis across all criteria, scenarios, and feature availability.</div>
+  </div>
+
+  <div class="winner-card">
+    <div class="winner-label">Recommended platform</div>
+    <div class="winner-name">ClickUp</div>
+    <div class="winner-score">Overall communication score: <strong style="color:var(--cu)">86 / 100</strong></div>
+    <div class="winner-body">ClickUp delivers the most complete native communication ecosystem for IT project teams. Its built-in chat, threaded comments, rich notification system, stakeholder access controls, and Docs module eliminate the need for external tools like Slack or Confluence — keeping all communication within a single platform.</div>
+  </div>
+
+  <div class="section-label">Use-case fit guide</div>
+  <div class="fit-grid">
+    <div class="fit-card featured">
+      <div class="fit-rank">Best overall</div>
+      <div class="fit-name" style="color:var(--cu)">ClickUp</div>
+      <div class="fit-desc">Large or cross-functional IT teams needing all-in-one communication, task management, and stakeholder access in one place.</div>
+    </div>
+    <div class="fit-card">
+      <div class="fit-rank">Best structured flow</div>
+      <div class="fit-name" style="color:var(--as)">Asana</div>
+      <div class="fit-desc">Teams that prioritise timeline visibility and structured updates. Supplement with Slack for real-time chat.</div>
+    </div>
+    <div class="fit-card">
+      <div class="fit-rank">Best self-hosted</div>
+      <div class="fit-name" style="color:var(--op)">OpenProject</div>
+      <div class="fit-desc">Regulated industries or teams needing on-premise hosting with formal documentation and wiki-based communication.</div>
+    </div>
+    <div class="fit-card">
+      <div class="fit-rank">Best for small teams</div>
+      <div class="fit-name" style="color:var(--tr)">Trello</div>
+      <div class="fit-desc">Solo developers or very small teams with simple workflows. Not recommended for projects with external stakeholders.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Final score chart</div>
+  <div class="card">
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--cu)"></span>ClickUp</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--as)"></span>Asana</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--op)"></span>OpenProject</div>
+      <div class="legend-item"><span class="legend-dot2" style="background:var(--tr)"></span>Trello</div>
+    </div>
+    <div style="position:relative;width:100%;height:200px">
+      <canvas id="finalBar" role="img" aria-label="Final bar chart showing ClickUp 86, Asana 79, OpenProject 71, Trello 62.">ClickUp 86, Asana 79, OpenProject 71, Trello 62.</canvas>
+    </div>
+  </div>
+
+  <div class="section-label">Limitations &amp; future work</div>
+  <ul class="insights-list">
+    <li><span class="ins-arrow">→</span>Scores are based on a simulated scenario; real-world user surveys would strengthen findings.</li>
+    <li><span class="ins-arrow">→</span>Pricing tiers affect feature availability — this study focuses on free/open-source tiers only.</li>
+    <li><span class="ins-arrow">→</span>Future research could extend to enterprise-only tools (Jira, Monday.com) for broader comparison.</li>
+    <li><span class="ins-arrow">→</span>A longitudinal study tracking actual team communication quality over a live project would add empirical depth.</li>
+  </ul>
+</div>
+
+<!-- ──────────────────── TOOL DEEP DIVES ──────────────────── -->
+<div id="page-clickup" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow" style="color:var(--cu)">Tool Profile</div>
+    <div class="page-title" style="color:var(--cu)">ClickUp</div>
+    <div class="page-desc">All-in-one work management platform with the most complete native communication suite in this study.</div>
+  </div>
+  <div id="deep-clickup"></div>
+</div>
+<div id="page-asana" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow" style="color:var(--as)">Tool Profile</div>
+    <div class="page-title" style="color:var(--as)">Asana</div>
+    <div class="page-desc">Structured task and project management platform with strong stakeholder visibility and timeline views.</div>
+  </div>
+  <div id="deep-asana"></div>
+</div>
+<div id="page-openproject" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow" style="color:var(--op)">Tool Profile</div>
+    <div class="page-title" style="color:var(--op)">OpenProject</div>
+    <div class="page-desc">Open-source, self-hostable project management with strong documentation and forum-based communication.</div>
+  </div>
+  <div id="deep-openproject"></div>
+</div>
+<div id="page-trello" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow" style="color:var(--tr)">Tool Profile</div>
+    <div class="page-title" style="color:var(--tr)">Trello</div>
+    <div class="page-desc">Kanban-based visual board tool — simple and approachable but limited in communication depth.</div>
+  </div>
+  <div id="deep-trello"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+/* ══ DATA ═══════════════════════════════════════════════════════════════════ */
+const TOOLS   = ['ClickUp','Asana','OpenProject','Trello'];
+const COLORS  = ['#4f8ef7','#34c77b','#7b5ef8','#f0a030'];
+const CRITERIA = [
+  'Real-time messaging','Task-level comments','Stakeholder visibility',
+  'Notification system','File & doc sharing','Role-based access',
+  '@Mentions & tagging','Mobile communication'
+];
+const SCORES = {
+  ClickUp:     [90,88,85,90,82,85,88,80],
+  Asana:       [55,85,88,82,78,83,82,72],
+  OpenProject: [60,75,80,68,82,80,70,58],
+  Trello:      [40,68,55,60,62,55,65,68]
+};
+const avg = arr => Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+
+const FEATURES = [
+  ['Native real-time chat',      'Yes','Partial','No','No'],
+  ['Threaded task comments',     'Yes','Yes','Yes','Partial'],
+  ['Stakeholder-only view',      'Yes','Yes','Yes','No'],
+  ['Email notifications',        'Yes','Yes','Yes','Yes'],
+  ['Push notifications',         'Yes','Yes','Partial','Partial'],
+  ['@Mention in tasks',          'Yes','Yes','Yes','Yes'],
+  ['Document / wiki module',     'Yes','Partial','Yes','No'],
+  ['Guest / external access',    'Yes','Yes','Yes','Partial'],
+  ['RACI / role matrix',         'Yes','Yes','Yes','No'],
+  ['Mobile app (iOS & Android)', 'Yes','Yes','Partial','Yes'],
+  ['Gantt chart built-in',       'Yes','Yes','Yes','No'],
+  ['Status update broadcasts',   'Yes','Yes','Partial','No']
+];
+
+const SCENARIOS = [
+  { label: 'Task assigned',
+    result: {
+      ClickUp:     'Developer receives instant in-app notification and email. Task appears in their personal inbox. Stakeholders with view access see the updated board in real time.',
+      Asana:       'Assignment triggers email + in-app notification. Assignee sees it in My Tasks. Stakeholders with portfolio access get an updated timeline view — no real-time chat alert.',
+      OpenProject: 'Work package assigned via email notification. Assignee sees it in the activity stream. Stakeholders need to log in to check the update — no push alert.',
+      Trello:      'Card assigned triggers email notification only. No in-app chat alert. Stakeholders need to manually refresh the board to see the assignment.'
+    }
+  },
+  { label: 'Issue escalation',
+    result: {
+      ClickUp:     'Developer flags a blocker via status change + comment, then @mentions the project leader in built-in chat. Immediate notification sent. Leader can respond in-thread within seconds.',
+      Asana:       'Developer adds a priority-flagged comment and @mentions project leader. Notification sent via email and in-app. No native chat — leader must reply in the task thread.',
+      OpenProject: 'Developer changes work package status to "blocked" and posts in the project forum. Project leader notified by email. Response time depends on email monitoring frequency.',
+      Trello:      'Developer moves card to "Blocked" column and adds a comment. No escalation alert. Project leader must monitor the board manually unless integrated with Slack.'
+    }
+  },
+  { label: 'Stakeholder report',
+    result: {
+      ClickUp:     'Project leader shares a public Dashboard link. Stakeholders see live progress, task statuses, and workload charts — no account needed. Automated weekly digests can be configured.',
+      Asana:       'Portfolio view shared with stakeholders via guest access. Status update posts generate a structured report. Stakeholders must create a free Asana account to view it.',
+      OpenProject: 'Project leader exports a report or shares a project overview link. Stakeholders can be given limited view roles. No live auto-refresh — manual updates required.',
+      Trello:      'Project leader shares the board link. Stakeholders see the kanban only — no summary dashboard or automated reporting available on the free tier.'
+    }
+  },
+  { label: 'Daily stand-up',
+    result: {
+      ClickUp:     'Built-in Chat space used for async stand-up. Each member posts update in a dedicated channel. Project leader pins key messages. Searchable history retained indefinitely.',
+      Asana:       'No native chat. Teams use the Status Update feature or integrate Slack. Asana can auto-post task summaries to Slack channels as a workaround.',
+      OpenProject: 'Forum or meeting minutes wiki page used for stand-up notes. Structured but not real-time. Works well for remote-async teams with a documentation culture.',
+      Trello:      'No built-in chat. Requires Power-Up integrations (e.g. Slack). A native async stand-up is not possible on the free tier.'
+    }
+  }
+];
+
+const RACI_TASKS = ['Define project scope','Assign tasks','Daily stand-up','Stakeholder report','Risk log update','Sprint review','Deployment approval'];
+const RACI_ROLES = ['Project Leader','Developer','Tester','Stakeholder'];
+const RACI_DATA  = [
+  ['A','R','I','C'],['A','R','C','I'],['R','R','R','I'],
+  ['R','I','I','A'],['A','R','R','C'],['A','R','R','I'],['A','R','C','A']
+];
+
+const TOOL_DETAIL = {
+  ClickUp: {
+    color: '#4f8ef7',
+    url: 'https://clickup.com',
+    summary: 'ClickUp is a comprehensive all-in-one work OS that combines tasks, docs, goals, chat, and whiteboards in a single platform. For communication, it is the strongest performer in this study.',
+    strengths: ['Native real-time chat with dedicated channels','Threaded comments on every task and document','Granular notification controls per user','Public shareable dashboards for stakeholders','Rich document editor (Docs) replaces Confluence/Notion','Guest access without requiring a paid seat'],
+    weaknesses: ['Feature density creates a learning curve for new users','Mobile app can feel overwhelming on first use','Some advanced features require higher-tier plans'],
+    score: avg(SCORES.ClickUp)
+  },
+  Asana: {
+    color: '#34c77b',
+    url: 'https://asana.com',
+    summary: 'Asana is a structured project management platform known for clear task hierarchies, timeline views, and portfolio management. Communication is strong at the task level but lacks native real-time chat.',
+    strengths: ['Excellent stakeholder portfolio visibility','Task-level comments with @mentions and attachments','Status update feature creates structured reports','Timeline (Gantt) view with clear ownership','Integrates well with Slack, Teams, and email'],
+    weaknesses: ['No native real-time chat — must integrate third-party tools','Guest accounts require stakeholders to sign up','Status updates not fully automated'],
+    score: avg(SCORES.Asana)
+  },
+  OpenProject: {
+    color: '#7b5ef8',
+    url: 'https://www.openproject.org',
+    summary: 'OpenProject is a fully open-source, self-hostable project management tool. It excels at formal, structured communication via its wiki, forums, and work package comments — ideal for regulated environments.',
+    strengths: ['Fully open-source and self-hostable — full data control','Wiki and forum for structured async communication','Strong role-based access control for stakeholders','Good Gantt and roadmap views','Active community and EU-based hosting options'],
+    weaknesses: ['No native real-time chat whatsoever','Steeper setup and onboarding than SaaS tools','Mobile experience is limited compared to competitors','UI feels dated compared to ClickUp and Asana'],
+    score: avg(SCORES.OpenProject)
+  },
+  Trello: {
+    color: '#f0a030',
+    url: 'https://trello.com',
+    summary: 'Trello is a visual kanban board tool that is extremely easy to learn and use. However, communication capabilities are thin on the free tier, making it less suitable for IT projects with complex stakeholder structures.',
+    strengths: ['Extremely low learning curve','Clean visual kanban interface','Power-Up ecosystem extends functionality','Good for small or solo projects','Card comments work for simple async communication'],
+    weaknesses: ['No native real-time chat on free tier','No native Gantt or timeline view','Stakeholder dashboards require paid integrations','Communication features lag significantly behind competitors','No RACI or role management built in'],
+    score: avg(SCORES.Trello)
+  }
+};
+
+/* ══ NAVIGATION ══════════════════════════════════════════════════════════════ */
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (window.innerWidth < 720) document.getElementById('sidebar').classList.remove('open');
+  if (id === 'scores')     setTimeout(initBarChart, 50);
+  if (id === 'recommendation') setTimeout(initFinalBar, 50);
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* ══ SCORE BARS ══════════════════════════════════════════════════════════════ */
+function renderScores() {
+  const tf = document.getElementById('toolFilter').value;
+  const sf = document.getElementById('sortFilter').value;
+  const cont = document.getElementById('scoresContainer');
+  cont.innerHTML = '';
+  const tools = tf === 'all' ? TOOLS : [tf];
+  tools.forEach(tool => {
+    const color = COLORS[TOOLS.indexOf(tool)];
+    let pairs = CRITERIA.map((c, i) => ({ c, s: SCORES[tool][i] }));
+    if (sf === 'asc')  pairs.sort((a,b) => a.s - b.s);
+    if (sf === 'desc') pairs.sort((a,b) => b.s - a.s);
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:.9rem">
+        <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
+        <span style="font-size:15px;font-weight:500;color:var(--text)">${tool}</span>
+        <span style="margin-left:auto;font-size:13px;font-weight:600;color:${color}">${avg(SCORES[tool])}/100</span>
+      </div>`;
+    pairs.forEach(({ c, s }) => {
+      const row = document.createElement('div');
+      row.className = 'score-row';
+      row.innerHTML = `
+        <span class="score-crit">${c}</span>
+        <div class="bar-wrap"><div class="bar-fill" style="width:0%;background:${color}" data-w="${s}"></div></div>
+        <span class="score-val">${s}</span>`;
+      div.appendChild(row);
+    });
+    cont.appendChild(div);
+  });
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.w + '%');
+  });
+}
+
+/* ══ MATRIX ══════════════════════════════════════════════════════════════════ */
+function renderMatrix() {
+  const body = document.getElementById('matrixBody');
+  FEATURES.forEach(row => {
+    const tr = document.createElement('tr');
+    row.forEach((val, i) => {
+      const td = document.createElement('td');
+      if (i === 0) {
+        td.textContent = val;
+      } else {
+        const cls = val === 'Yes' ? 'badge-yes' : val === 'No' ? 'badge-no' : 'badge-part';
+        td.innerHTML = `<span class="badge ${cls}">${val}</span>`;
+      }
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+}
+
+/* ══ SCENARIO ════════════════════════════════════════════════════════════════ */
+let activeScen = 0;
+function renderScenarioBtns() {
+  const cont = document.getElementById('scenarioBtns');
+  SCENARIOS.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'scen-btn' + (i === 0 ? ' active' : '');
+    b.textContent = s.label;
+    b.onclick = () => {
+      document.querySelectorAll('.scen-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      activeScen = i;
+      renderScenarioResult();
+    };
+    cont.appendChild(b);
+  });
+  renderScenarioResult();
+}
+function renderScenarioResult() {
+  const s = SCENARIOS[activeScen];
+  const cont = document.getElementById('scenarioResult');
+  cont.innerHTML = TOOLS.map((t, i) => `
+    <div class="scen-card">
+      <div class="scen-card-head">
+        <span style="width:9px;height:9px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></span>
+        <span class="scen-card-name">${t}</span>
+      </div>
+      <div class="scen-body">${s.result[t]}</div>
+    </div>`).join('');
+}
+
+/* ══ RACI ════════════════════════════════════════════════════════════════════ */
+function renderRaci() {
+  const head = document.getElementById('raciHead');
+  const body = document.getElementById('raciBody');
+  head.innerHTML = `<th>Task</th>` + RACI_ROLES.map(r => `<th>${r}</th>`).join('');
+  RACI_TASKS.forEach((task, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${task}</td>` + RACI_DATA[i].map(v =>
+      `<td><span class="raci-pill raci-${v.toLowerCase()}">${v}</span></td>`).join('');
+    body.appendChild(tr);
+  });
+}
+
+/* ══ DEEP DIVES ══════════════════════════════════════════════════════════════ */
+function renderDeep() {
+  TOOLS.forEach(tool => {
+    const d = TOOL_DETAIL[tool];
+    const key = tool.toLowerCase().replace(/\s/g,'');
+    const container = document.getElementById('deep-' + key);
+    if (!container) return;
+    container.innerHTML = `
+      <div class="metric-grid" style="margin-bottom:1.25rem">
+        <div class="metric">
+          <div class="metric-label">Overall score</div>
+          <div class="metric-value" style="color:${d.color}">${d.score}</div>
+          <div class="metric-sub">out of 100</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Ranking</div>
+          <div class="metric-value">#${TOOLS.indexOf(tool)+1}</div>
+          <div class="metric-sub">of 4 tools</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Website</div>
+          <div class="metric-value" style="font-size:13px;font-weight:400;margin-top:.3rem">
+            <a href="${d.url}" target="_blank" style="color:${d.color};font-size:13px">${d.url.replace('https://','')}</a>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-label">Summary</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7">${d.summary}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem">
+        <div class="card">
+          <div class="card-label" style="color:var(--green)">Strengths</div>
+          <ul style="list-style:none">
+            ${d.strengths.map(s=>`<li style="font-size:12px;color:var(--muted);padding:.3rem 0;border-bottom:1px solid var(--border);display:flex;gap:.5rem"><span style="color:var(--green);flex-shrink:0">✓</span>${s}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-label" style="color:var(--red)">Weaknesses</div>
+          <ul style="list-style:none">
+            ${d.weaknesses.map(w=>`<li style="font-size:12px;color:var(--muted);padding:.3rem 0;border-bottom:1px solid var(--border);display:flex;gap:.5rem"><span style="color:var(--red);flex-shrink:0">✕</span>${w}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+      <div class="section-label">Score breakdown</div>
+      <div class="card score-section" id="deep-scores-${key}"></div>`;
+    const sc = document.getElementById('deep-scores-' + key);
+    CRITERIA.forEach((c, i) => {
+      const row = document.createElement('div');
+      row.className = 'score-row';
+      row.innerHTML = `<span class="score-crit">${c}</span>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${SCORES[tool][i]}%;background:${d.color}"></div></div>
+        <span class="score-val">${SCORES[tool][i]}</span>`;
+      sc.appendChild(row);
+    });
+  });
+}
+
+/* ══ CHARTS ══════════════════════════════════════════════════════════════════ */
+let radarDone = false, barDone = false, finalDone = false;
+
+function initRadar() {
+  if (radarDone) return; radarDone = true;
+  new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: {
+      labels: CRITERIA,
+      datasets: TOOLS.map((t, i) => ({
+        label: t,
+        data: SCORES[t],
+        borderColor: COLORS[i],
+        backgroundColor: COLORS[i] + '22',
+        borderWidth: 1.5,
+        pointRadius: 3,
+        pointBackgroundColor: COLORS[i]
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, font: { size: 10 }, color: '#555a72', backdropColor: 'transparent' },
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          pointLabels: { font: { size: 11 }, color: '#7a7f96' }
+        }
+      }
+    }
+  });
+}
+
+function initBarChart() {
+  if (barDone) return; barDone = true;
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: TOOLS,
+      datasets: [{
+        label: 'Overall score',
+        data: TOOLS.map(t => avg(SCORES[t])),
+        backgroundColor: COLORS,
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#7a7f96', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#7a7f96', font: { size: 12 } } }
+      }
+    }
+  });
+}
+
+function initFinalBar() {
+  if (finalDone) return; finalDone = true;
+  new Chart(document.getElementById('finalBar'), {
+    type: 'bar',
+    data: {
+      labels: TOOLS,
+      datasets: [{
+        label: 'Overall score',
+        data: TOOLS.map(t => avg(SCORES[t])),
+        backgroundColor: COLORS,
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#7a7f96', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#7a7f96', font: { size: 12 } } }
+      }
+    }
+  });
+}
+
+/* ══ INIT ════════════════════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  renderScores();
+  renderMatrix();
+  renderScenarioBtns();
+  renderRaci();
+  renderDeep();
+  setTimeout(initRadar, 100);
+});
+</script>
+</body>
+</html>
